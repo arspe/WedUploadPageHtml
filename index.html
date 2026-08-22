@@ -957,11 +957,15 @@ multiple
 
 
 
-
-<button
+/*
+button
 class="btn-upload"
 onclick="document.getElementById('fileInput').click()">
-
+*/
+  
+<button
+class="btn-upload"
+type="button">
 
 <svg class="upload-icon"
 viewBox="0 0 24 24"
@@ -999,7 +1003,7 @@ y2="15"/>
 </svg>
 
 
-Carica qui la tua foto
+<span id="btnLabel">Carica qui la tua foto</span>
 
 
 </button>
@@ -1240,6 +1244,7 @@ const BACKEND_URL = 'https://mywedupload.onrender.com';
 const input = document.getElementById('fileInput');
 const hint = document.getElementById('hint');
 const button = document.querySelector('.btn-upload');
+const btnLabel = document.getElementById('btnLabel');
 const params = new URLSearchParams(location.search);
 const weddingToken = params.get('t') || '';
 
@@ -1254,11 +1259,15 @@ input.addEventListener('change', () => {
   if (!files.length) return;
   const totalMB = files.reduce((n, f) => n + f.size, 0) / 1024 / 1024;
   setHint(`${files.length} ${files.length === 1 ? 'elemento selezionato' : 'elementi selezionati'} · ${totalMB.toFixed(1)} MB`);
+  btnLabel.textContent = files.length === 1 ? 'Carica' : `Carica (${files.length})`;
 });
 
-button.addEventListener('click', async (event) => {
-  if (!input.files?.length) return;
-  event.preventDefault();
+button.addEventListener('click', async () => {
+  // Se non hai ancora scelto nessuna foto/video, il pulsante apre la selezione file
+  if (!input.files?.length) {
+    input.click();
+    return;
+  }
   if (!weddingToken) { setHint('QR non valido.', false); return; }
 
   const form = new FormData();
@@ -1276,6 +1285,7 @@ button.addEventListener('click', async (event) => {
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || 'Caricamento non riuscito.');
     input.value = '';
+    btnLabel.textContent = 'Carica qui la tua foto';
     setHint(`✓ ${data.count} ${data.count === 1 ? 'ricordo caricato' : 'ricordi caricati'} con successo`);
   } catch (err) {
     setHint(err.message || 'Caricamento non riuscito.', false);

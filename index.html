@@ -639,6 +639,29 @@ cardIn 1.6s ease .4s both;
 
 
 
+/* Stato "pronto al caricamento": la foto è stata scelta, va ripremuto
+   il pulsante per confermare l'invio */
+
+.btn-upload-ready {
+background:
+linear-gradient(
+135deg,
+#c9a24b,
+#dbb968
+) !important;
+
+box-shadow:
+0 8px 25px rgba(201,162,75,.40) !important;
+
+animation:
+readyPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes readyPulse {
+0%, 100% { transform:scale(1); }
+50% { transform:scale(1.03); }
+}
+
 /* Pulsante galleria (secondario, più discreto) */
 
 .btn-gallery {
@@ -1489,27 +1512,19 @@ function setHint(text, ok = true) {
   hint.style.color = ok ? '#4e6e4a' : '#8a3d3d';
 }
 
-input.addEventListener('change', () => {
-  const files = [...(input.files || [])];
-  if (!files.length) return;
-  const totalMB = files.reduce((n, f) => n + f.size, 0) / 1024 / 1024;
-  setHint(`${files.length} ${files.length === 1 ? 'elemento selezionato' : 'elementi selezionati'} · ${totalMB.toFixed(1)} MB`);
-  btnLabel.textContent = files.length === 1 ? 'Carica' : `Carica (${files.length})`;
-});
-
-button.addEventListener('click', async () => {
-  // Se non hai ancora scelto nessuna foto/video, il pulsante apre la selezione file
-  if (!input.files?.length) {
-    input.click();
-    return;
-  }
+async function uploadSelectedFiles() {
+  if (!input.files?.length) return;
   if (!weddingToken) { setHint('QR non valido.', false); return; }
 
-  const form = new FormData();
-  for (const file of input.files) form.append('files', file, file.name);
+  const files = [...input.files];
 
+  const form = new FormData();
+  for (const file of files) form.append('files', file, file.name);
+
+  button.classList.remove('btn-upload-ready');
   button.disabled = true;
   button.style.opacity = '.65';
+  btnLabel.textContent = 'Caricamento…';
   setHint('Caricamento in corso…');
   try {
     const response = await fetch(`${BACKEND_URL}/api/upload`, {
@@ -1520,14 +1535,35 @@ button.addEventListener('click', async () => {
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || 'Caricamento non riuscito.');
     input.value = '';
-    btnLabel.textContent = 'Carica qui la tua foto';
     setHint(`✓ ${data.count} ${data.count === 1 ? 'ricordo caricato' : 'ricordi caricati'} con successo`);
   } catch (err) {
     setHint(err.message || 'Caricamento non riuscito.', false);
   } finally {
     button.disabled = false;
     button.style.opacity = '1';
+    btnLabel.textContent = 'Carica qui la tua foto';
   }
+}
+
+// Dopo la scelta, il pulsante diventa giallo: segnala che va ripremuto per
+// caricare davvero.
+input.addEventListener('change', () => {
+  const files = [...(input.files || [])];
+  if (!files.length) return;
+  const totalMB = files.reduce((n, f) => n + f.size, 0) / 1024 / 1024;
+  setHint(`${files.length} ${files.length === 1 ? 'elemento selezionato' : 'elementi selezionati'} · ${totalMB.toFixed(1)} MB — tocca di nuovo per caricare`);
+  btnLabel.textContent = files.length === 1 ? 'Tocca per caricare' : `Tocca per caricare (${files.length})`;
+  button.classList.add('btn-upload-ready');
+});
+
+button.addEventListener('click', () => {
+  // Se non hai ancora scelto nessuna foto/video, il pulsante apre la selezione file
+  if (!input.files?.length) {
+    input.click();
+    return;
+  }
+  // Altrimenti conferma il caricamento di quanto già scelto
+  uploadSelectedFiles();
 });
 
 // ---------------------------------------------------------------------
@@ -1546,7 +1582,6 @@ const lightboxPrev = document.getElementById('lightboxPrev');
 const lightboxNext = document.getElementById('lightboxNext');
 
 let galleryFiles = [];
-let galleryLoaded = false;
 let currentIndex = -1;
 
 function mediaUrl(id) {
@@ -1554,14 +1589,15 @@ function mediaUrl(id) {
 }
 
 async function loadGallery() {
-  if (galleryLoaded) return;
+  galleryGrid.innerHTML = '';
+  galleryStatus.textContent = 'Caricamento…';
+  galleryStatus.style.display = 'block';
   try {
     const response = await fetch(`${BACKEND_URL}/api/photos?token=${encodeURIComponent(weddingToken)}`);
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || 'Impossibile caricare la galleria.');
     galleryFiles = data.files || [];
     renderGallery();
-    galleryLoaded = true;
   } catch (err) {
     galleryStatus.textContent = err.message || 'Impossibile caricare la galleria.';
     galleryStatus.style.display = 'block';

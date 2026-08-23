@@ -639,6 +639,210 @@ cardIn 1.6s ease .4s both;
 
 
 
+/* Pulsante galleria (secondario, più discreto) */
+
+.btn-gallery {
+
+display:inline-flex;
+align-items:center;
+justify-content:center;
+gap:10px;
+
+margin-top:22px;
+
+padding:14px 34px;
+
+background:transparent;
+
+color:var(--sage-dark);
+
+font-family:'Jost',sans-serif;
+font-size:.74rem;
+font-weight:400;
+letter-spacing:.22em;
+text-transform:uppercase;
+
+border:1px solid var(--sage);
+border-radius:3px;
+
+cursor:pointer;
+
+transition:
+background .25s ease,
+color .25s ease;
+}
+
+.btn-gallery:hover {
+background:var(--sage);
+color:var(--cream);
+}
+
+.btn-gallery .upload-icon {
+width:16px;
+height:16px;
+}
+
+/* Galleria a schermo intero */
+
+.gallery-overlay {
+position:fixed;
+inset:0;
+z-index:60;
+background:var(--crema, #fdfaf6);
+display:flex;
+flex-direction:column;
+transform:translateY(100%);
+transition:transform .35s ease;
+}
+
+.gallery-overlay.open {
+transform:translateY(0);
+}
+
+.gallery-top {
+display:flex;
+align-items:center;
+justify-content:space-between;
+padding:18px 20px;
+border-bottom:1px solid rgba(184,151,90,.25);
+flex-shrink:0;
+}
+
+.gallery-title {
+font-family:'Cormorant Garamond',serif;
+font-size:1.2rem;
+color:var(--sage-dark);
+letter-spacing:.04em;
+}
+
+.gallery-close {
+background:none;
+border:none;
+font-size:1.8rem;
+line-height:1;
+color:var(--sage-dark);
+cursor:pointer;
+padding:4px 10px;
+}
+
+.gallery-body {
+flex:1;
+overflow-y:auto;
+padding:16px;
+}
+
+.gallery-status {
+text-align:center;
+color:#8a7a5c;
+font-family:'Jost',sans-serif;
+font-size:.85rem;
+margin-top:40px;
+display:none;
+}
+
+.gallery-grid {
+display:grid;
+grid-template-columns:repeat(auto-fill,minmax(110px,1fr));
+gap:6px;
+}
+
+.gallery-item {
+position:relative;
+aspect-ratio:1/1;
+border:none;
+padding:0;
+background:#eee5d8;
+border-radius:4px;
+overflow:hidden;
+cursor:pointer;
+}
+
+.gallery-item img {
+width:100%;
+height:100%;
+object-fit:cover;
+display:block;
+opacity:0;
+transition:opacity .3s ease;
+}
+
+.gallery-item img[src] {
+opacity:1;
+}
+
+.gallery-video-badge {
+position:absolute;
+bottom:6px;
+right:6px;
+background:rgba(0,0,0,.55);
+color:#fff;
+font-size:.7rem;
+padding:2px 6px;
+border-radius:3px;
+}
+
+/* Lightbox */
+
+.lightbox {
+position:fixed;
+inset:0;
+z-index:70;
+background:rgba(20,18,14,.94);
+display:none;
+align-items:center;
+justify-content:center;
+}
+
+.lightbox.open {
+display:flex;
+}
+
+.lightbox-stage {
+max-width:92vw;
+max-height:86vh;
+display:flex;
+align-items:center;
+justify-content:center;
+}
+
+.lightbox-stage img,
+.lightbox-stage video {
+max-width:92vw;
+max-height:86vh;
+object-fit:contain;
+border-radius:2px;
+}
+
+.lightbox-close {
+position:absolute;
+top:16px;
+right:20px;
+background:none;
+border:none;
+color:#fff;
+font-size:2rem;
+line-height:1;
+cursor:pointer;
+}
+
+.lightbox-nav {
+position:absolute;
+top:50%;
+transform:translateY(-50%);
+background:rgba(255,255,255,.12);
+border:none;
+color:#fff;
+font-size:2rem;
+width:44px;
+height:44px;
+border-radius:50%;
+cursor:pointer;
+line-height:1;
+}
+
+.lightbox-prev { left:14px; }
+.lightbox-next { right:14px; }
+
 .btn-upload:hover {
 
 
@@ -955,10 +1159,13 @@ accept="image/*,video/mp4,video/quicktime,video/webm"
 multiple
 />
 
-  
+
+
+
 <button
 class="btn-upload"
 type="button">
+
 
 <svg class="upload-icon"
 viewBox="0 0 24 24"
@@ -1003,6 +1210,23 @@ y2="15"/>
 
 
 <p id="hint" class="preview-hint"></p>
+
+<div class="cta-sprig" style="margin-top:22px;">
+<div class="line"></div>
+<svg width="14" height="14" viewBox="0 0 18 18">
+<circle cx="9" cy="9" r="3" fill="none" stroke="#b8975a" stroke-width="1"/>
+</svg>
+<div class="line"></div>
+</div>
+
+<button class="btn-gallery" type="button" id="galleryBtn">
+<svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+<rect x="3" y="3" width="18" height="18" rx="2"/>
+<circle cx="8.5" cy="8.5" r="1.5"/>
+<path d="M21 15l-5-5L5 21"/>
+</svg>
+<span>Guarda i ricordi condivisi</span>
+</button>
 
 
 
@@ -1230,6 +1454,24 @@ transparent;
 
 </style>
 
+<div class="gallery-overlay" id="galleryOverlay" aria-hidden="true">
+  <div class="gallery-top">
+    <span class="gallery-title">I nostri ricordi</span>
+    <button class="gallery-close" id="galleryClose" aria-label="Chiudi">&times;</button>
+  </div>
+  <div class="gallery-body" id="galleryBody">
+    <p class="gallery-status" id="galleryStatus">Caricamento…</p>
+    <div class="gallery-grid" id="galleryGrid"></div>
+  </div>
+</div>
+
+<div class="lightbox" id="lightbox" aria-hidden="true">
+  <button class="lightbox-close" id="lightboxClose" aria-label="Chiudi">&times;</button>
+  <button class="lightbox-nav lightbox-prev" id="lightboxPrev" aria-label="Precedente">&#8249;</button>
+  <div class="lightbox-stage" id="lightboxStage"></div>
+  <button class="lightbox-nav lightbox-next" id="lightboxNext" aria-label="Successivo">&#8250;</button>
+</div>
+
 <script>
 // Indirizzo del backend su Render (aggiornalo con il tuo dopo il deploy)
 const BACKEND_URL = 'https://mywedupload.onrender.com';
@@ -1285,6 +1527,132 @@ button.addEventListener('click', async () => {
   } finally {
     button.disabled = false;
     button.style.opacity = '1';
+  }
+});
+
+// ---------------------------------------------------------------------
+// Galleria dei ricordi già caricati
+// ---------------------------------------------------------------------
+
+const galleryBtn = document.getElementById('galleryBtn');
+const galleryOverlay = document.getElementById('galleryOverlay');
+const galleryClose = document.getElementById('galleryClose');
+const galleryGrid = document.getElementById('galleryGrid');
+const galleryStatus = document.getElementById('galleryStatus');
+const lightbox = document.getElementById('lightbox');
+const lightboxStage = document.getElementById('lightboxStage');
+const lightboxClose = document.getElementById('lightboxClose');
+const lightboxPrev = document.getElementById('lightboxPrev');
+const lightboxNext = document.getElementById('lightboxNext');
+
+let galleryFiles = [];
+let galleryLoaded = false;
+let currentIndex = -1;
+
+function mediaUrl(id) {
+  return `${BACKEND_URL}/api/photos/${id}/media?token=${encodeURIComponent(weddingToken)}`;
+}
+
+async function loadGallery() {
+  if (galleryLoaded) return;
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/photos?token=${encodeURIComponent(weddingToken)}`);
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || 'Impossibile caricare la galleria.');
+    galleryFiles = data.files || [];
+    renderGallery();
+    galleryLoaded = true;
+  } catch (err) {
+    galleryStatus.textContent = err.message || 'Impossibile caricare la galleria.';
+    galleryStatus.style.display = 'block';
+  }
+}
+
+function renderGallery() {
+  galleryGrid.innerHTML = '';
+  if (!galleryFiles.length) {
+    galleryStatus.textContent = 'Non ci sono ancora ricordi condivisi. Sii il primo!';
+    galleryStatus.style.display = 'block';
+    return;
+  }
+  galleryStatus.style.display = 'none';
+  galleryFiles.forEach((file, i) => {
+    const item = document.createElement('button');
+    item.className = 'gallery-item';
+    item.type = 'button';
+    item.setAttribute('aria-label', file.isVideo ? 'Apri video' : 'Apri foto');
+    const img = document.createElement('img');
+    img.loading = 'lazy';
+    img.src = mediaUrl(file.id);
+    img.alt = '';
+    item.appendChild(img);
+    if (file.isVideo) {
+      const badge = document.createElement('span');
+      badge.className = 'gallery-video-badge';
+      badge.innerHTML = '▶';
+      item.appendChild(badge);
+    }
+    item.addEventListener('click', () => openLightbox(i));
+    galleryGrid.appendChild(item);
+  });
+}
+
+function openLightbox(index) {
+  currentIndex = index;
+  const file = galleryFiles[index];
+  lightboxStage.innerHTML = '';
+  if (file.isVideo) {
+    const video = document.createElement('video');
+    video.src = mediaUrl(file.id);
+    video.controls = true;
+    video.autoplay = true;
+    video.playsInline = true;
+    lightboxStage.appendChild(video);
+  } else {
+    const img = document.createElement('img');
+    img.src = mediaUrl(file.id);
+    img.alt = '';
+    lightboxStage.appendChild(img);
+  }
+  lightbox.classList.add('open');
+  lightbox.setAttribute('aria-hidden', 'false');
+}
+
+function closeLightbox() {
+  lightbox.classList.remove('open');
+  lightbox.setAttribute('aria-hidden', 'true');
+  lightboxStage.innerHTML = '';
+  currentIndex = -1;
+}
+
+function showRelative(delta) {
+  if (currentIndex < 0) return;
+  const next = (currentIndex + delta + galleryFiles.length) % galleryFiles.length;
+  openLightbox(next);
+}
+
+galleryBtn.addEventListener('click', () => {
+  if (!weddingToken) { setHint('QR non valido.', false); return; }
+  galleryOverlay.classList.add('open');
+  galleryOverlay.setAttribute('aria-hidden', 'false');
+  loadGallery();
+});
+
+galleryClose.addEventListener('click', () => {
+  galleryOverlay.classList.remove('open');
+  galleryOverlay.setAttribute('aria-hidden', 'true');
+});
+
+lightboxClose.addEventListener('click', closeLightbox);
+lightboxPrev.addEventListener('click', () => showRelative(-1));
+lightboxNext.addEventListener('click', () => showRelative(1));
+lightbox.addEventListener('click', (e) => { if (e.target === lightbox) closeLightbox(); });
+
+document.addEventListener('keydown', (e) => {
+  if (lightbox.classList.contains('open')) {
+    if (e.key === 'Escape') closeLightbox();
+    if (e.key === 'ArrowLeft') showRelative(-1);
+    if (e.key === 'ArrowRight') showRelative(1);
   }
 });
 </script>

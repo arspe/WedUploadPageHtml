@@ -4,11 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Matrimonio di Armando & Vanessa</title>
+<title>Matrimonio di Armando e Vanessa</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Pinyon+Script&family=Jost:wght@300;400&display=swap" rel="stylesheet">
 
 <style>
+
 
 :root {
 
@@ -349,7 +350,7 @@ transparent
 .label-top {
 
 
-font-family:'Jost',sans-serif;
+font-family:'Jost',sans-serif,cursive;
 
 font-size:.7rem;
 
@@ -381,7 +382,7 @@ cardIn 1.3s ease .1s both;
 .title-main {
 
 
-font-family:'Pinyon Script',cursive;
+font-family:'Jost',sans-serif;
 
 font-size:
 
@@ -418,19 +419,19 @@ cardIn 1.5s ease .15s both;
 display:block;
 
 
-font-family:
-
-'Cormorant Garamond',
-serif;
+font-family:'Cormorant Garamond',serif;
 
 
 font-style:italic;
 
 
-font-size:1.6rem;
+font-weight:400;
 
 
-letter-spacing:.18em;
+font-size:clamp(1.6rem,6.5vw,2.5rem);
+
+
+letter-spacing:.1em;
 
 
 margin-top:6px;
@@ -662,7 +663,7 @@ readyPulse 1.4s ease-in-out infinite;
 50% { transform:scale(1.03); }
 }
 
-/* Pulsante galleria (secondario, più discreto) */
+/* Pulsante galleria (secondario, ma con carattere) */
 
 .btn-gallery {
 
@@ -673,9 +674,14 @@ gap:10px;
 
 margin-top:22px;
 
-padding:14px 34px;
+padding:14px 16px;
 
-background:transparent;
+background:
+linear-gradient(
+135deg,
+rgba(253,250,246,.9),
+rgba(197,207,191,.35)
+);
 
 color:var(--sage-dark);
 
@@ -685,24 +691,48 @@ font-weight:400;
 letter-spacing:.22em;
 text-transform:uppercase;
 
-border:1px solid var(--sage);
-border-radius:3px;
+border:2.5px solid var(--sepia);
+border-radius:30px;
 
 cursor:pointer;
+position:relative;
+overflow:hidden;
+
+box-shadow:
+0 4px 16px rgba(184,151,90,.15);
 
 transition:
-background .25s ease,
-color .25s ease;
+transform .3s ease,
+box-shadow .3s ease,
+border-color .3s ease,
+background .3s ease;
 }
 
 .btn-gallery:hover {
-background:var(--sage);
-color:var(--cream);
+transform:translateY(-2px);
+border-color:var(--sepia);
+background:
+linear-gradient(
+135deg,
+rgba(253,250,246,1),
+rgba(212,176,122,.25)
+);
+box-shadow:
+0 10px 26px rgba(184,151,90,.28);
+}
+
+.btn-gallery:active {
+transform:translateY(0);
 }
 
 .btn-gallery .upload-icon {
-width:16px;
-height:16px;
+width:28px;
+height:28px;
+transition:transform .35s ease;
+}
+
+.btn-gallery:hover .upload-icon {
+transform:scale(1.12) rotate(-4deg);
 }
 
 /* Galleria a schermo intero */
@@ -990,10 +1020,7 @@ display:none;
 margin-top:16px;
 
 
-font-family:
-
-'Cormorant Garamond',
-serif;
+font-family:'Cormorant Garamond',serif;
 
 
 font-style:italic;
@@ -1056,7 +1083,9 @@ font-family:'Cormorant Garamond',serif;
 
 font-style:italic;
 
-font-size:1.25rem;
+font-size:clamp(1.15rem, 4.5vw, 1.75rem);
+
+font-weight:600;
 
 letter-spacing:.05em;
 
@@ -1144,7 +1173,7 @@ opacity:.85;
 Matrimonio di
 
 <span class="title-and">
-Armando &amp; Vanessa
+Armando e Vanessa
 </span>
 
 </h1>
@@ -1172,7 +1201,7 @@ Armando &amp; Vanessa
 <div class="line"></div>
 </div>
 
-<p class="cta-text">Condividi con noi il tuo ricordo</p>
+<p class="cta-text">Ogni momento è più bello se condiviso</p>
 
 
 <input
@@ -1226,7 +1255,7 @@ y2="15"/>
 </svg>
 
 
-<span id="btnLabel">Carica qui la tua foto</span>
+<span id="btnLabel">Condividi i tuoi scatti</span>
 
 
 </button>
@@ -1248,7 +1277,7 @@ y2="15"/>
 <circle cx="8.5" cy="8.5" r="1.5"/>
 <path d="M21 15l-5-5L5 21"/>
 </svg>
-<span>Guarda i ricordi condivisi</span>
+<span>I momenti della giornata</span>
 </button>
 
 
@@ -1328,10 +1357,7 @@ clamp(2.8rem,16vw,4rem);
 .title-and {
 
 
-font-size:1rem;
-
-
-letter-spacing:.12em;
+letter-spacing:.05em;
 
 
 }
@@ -1535,13 +1561,13 @@ async function uploadSelectedFiles() {
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || 'Caricamento non riuscito.');
     input.value = '';
-    setHint(`✓ ${data.count} ${data.count === 1 ? 'ricordo caricato' : 'ricordi caricati'} con successo`);
+    setHint(`✓ Grazie! ${data.count === 1 ? 'Il tuo ricordo è stato aggiunto' : 'I tuoi ricordi sono stati aggiunti'} 💚`);
   } catch (err) {
     setHint(err.message || 'Caricamento non riuscito.', false);
   } finally {
     button.disabled = false;
     button.style.opacity = '1';
-    btnLabel.textContent = 'Carica qui la tua foto';
+    btnLabel.textContent = 'Condividi i tuoi scatti';
   }
 }
 
@@ -1552,7 +1578,7 @@ input.addEventListener('change', () => {
   if (!files.length) return;
   const totalMB = files.reduce((n, f) => n + f.size, 0) / 1024 / 1024;
   setHint(`${files.length} ${files.length === 1 ? 'elemento selezionato' : 'elementi selezionati'} · ${totalMB.toFixed(1)} MB — tocca di nuovo per caricare`);
-  btnLabel.textContent = files.length === 1 ? 'Tocca per caricare' : `Tocca per caricare (${files.length})`;
+  btnLabel.textContent = files.length === 1 ? 'Condividi' : `Condividi (${files.length})`;
   button.classList.add('btn-upload-ready');
 });
 

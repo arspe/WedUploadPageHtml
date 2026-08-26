@@ -1705,7 +1705,7 @@ function renderGallery() {
     item.setAttribute('aria-label', file.isVideo ? 'Apri video' : 'Apri foto');
     const img = document.createElement('img');
     img.loading = 'lazy';
-    img.src = mediaUrl(file.id);
+    if (file.thumb) img.src = file.thumb;
     img.alt = '';
     item.appendChild(img);
     if (file.isVideo) {
@@ -1769,6 +1769,16 @@ lightboxClose.addEventListener('click', closeLightbox);
 lightboxPrev.addEventListener('click', () => showRelative(-1));
 lightboxNext.addEventListener('click', () => showRelative(1));
 lightbox.addEventListener('click', (e) => { if (e.target === lightbox) closeLightbox(); });
+
+// Scorrimento con il dito (swipe) per passare da una foto all'altra
+let touchStartX = 0;
+lightboxStage.addEventListener('touchstart', (e) => {
+  touchStartX = e.changedTouches[0].clientX;
+}, { passive: true });
+lightboxStage.addEventListener('touchend', (e) => {
+  const delta = e.changedTouches[0].clientX - touchStartX;
+  if (Math.abs(delta) > 40) showRelative(delta > 0 ? -1 : 1);
+}, { passive: true });
 
 document.addEventListener('keydown', (e) => {
   if (lightbox.classList.contains('open')) {

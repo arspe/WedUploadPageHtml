@@ -4,11 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Matrimonio di Armando e Vanessa</title>
+<title>Matrimonio di Armando & Vanessa</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Pinyon+Script&family=Jost:wght@300;400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Pinyon+Script&family=Jost:wght@300;400&family=Libre+Caslon+Display&family=EB+Garamond:ital@1&family=Marcellus&display=swap" rel="stylesheet">
+
+<!-- Font "Florilane Cardillac", usato solo per la "&", caricato da un
+     servizio online (questa versione funziona, a differenza del file
+     scaricato manualmente che risultava danneggiato). -->
+<link href="https://db.onlinewebfonts.com/c/81817379446dcd86f60703aaef4a0afa?family=Florilane+Cardillac" rel="stylesheet">
 
 <style>
+
 
 
 :root {
@@ -382,7 +388,9 @@ cardIn 1.3s ease .1s both;
 .title-main {
 
 
-font-family:'Jost',sans-serif;
+font-family:'Pinyon Script',cursive;
+
+font-style:normal;
 
 font-size:
 
@@ -416,7 +424,9 @@ cardIn 1.5s ease .15s both;
 .title-and {
 
 
-display:block;
+display:inline-block;
+
+text-align:left;
 
 
 font-family:'Cormorant Garamond',serif;
@@ -434,11 +444,44 @@ font-size:clamp(1.6rem,6.5vw,2.5rem);
 letter-spacing:.1em;
 
 
+line-height:.95;
+
+
 margin-top:6px;
 
 
 color:#906b48;
 
+
+}
+
+.name-line {
+display:block;
+}
+
+.name-line-v {
+margin-left:1.1em;
+margin-top:-.22em;
+}
+
+/* La "&" tra i due nomi: sotto la O di Armando, sopra la seconda S di
+   Vanessa */
+
+.amp {
+
+display:block;
+
+margin-left:3.6em;
+
+font-family:'Florilane Cardillac','Marcellus',serif;
+
+font-style:normal;
+
+font-weight:400;
+
+letter-spacing:0;
+
+color:inherit;
 
 }
 
@@ -757,25 +800,39 @@ display:flex;
 align-items:center;
 justify-content:space-between;
 padding:18px 20px;
-border-bottom:1px solid rgba(184,151,90,.25);
+background:linear-gradient(180deg,#fdfaf6,var(--cream));
+border-bottom:1px solid rgba(184,151,90,.35);
 flex-shrink:0;
 }
 
 .gallery-title {
 font-family:'Cormorant Garamond',serif;
-font-size:1.2rem;
+font-style:italic;
+font-size:1.4rem;
 color:var(--sage-dark);
 letter-spacing:.04em;
 }
 
 .gallery-close {
-background:none;
-border:none;
-font-size:1.8rem;
+width:34px;
+height:34px;
+border-radius:50%;
+border:1.3px solid var(--gold);
+background:#fff;
+font-size:1rem;
 line-height:1;
-color:var(--sage-dark);
+color:#906b48;
 cursor:pointer;
-padding:4px 10px;
+display:flex;
+align-items:center;
+justify-content:center;
+padding:0;
+transition:background .2s ease,transform .2s ease;
+}
+
+.gallery-close:hover {
+background:var(--cream);
+transform:scale(1.06);
 }
 
 .gallery-body {
@@ -805,9 +862,10 @@ aspect-ratio:1/1;
 border:none;
 padding:0;
 background:#eee5d8;
-border-radius:4px;
+border-radius:10px;
 overflow:hidden;
 cursor:pointer;
+box-shadow:0 2px 6px rgba(78,110,74,.15);
 }
 
 .gallery-item img {
@@ -1173,7 +1231,9 @@ opacity:.85;
 Matrimonio di
 
 <span class="title-and">
-Armando e Vanessa
+<span class="name-line">Armando</span>
+<span class="amp">&amp;</span>
+<span class="name-line name-line-v">Vanessa</span>
 </span>
 
 </h1>
@@ -1277,7 +1337,7 @@ y2="15"/>
 <circle cx="8.5" cy="8.5" r="1.5"/>
 <path d="M21 15l-5-5L5 21"/>
 </svg>
-<span>I momenti della giornata</span>
+<span>Sfoglia l'album con tutti gli scatti</span>
 </button>
 
 

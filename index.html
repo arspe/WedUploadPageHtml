@@ -802,22 +802,15 @@ transform:translateY(0);
 .gallery-top {
 display:flex;
 align-items:center;
-justify-content:space-between;
+justify-content:flex-end;
+gap:10px;
 padding:18px 20px;
 background:linear-gradient(180deg,#fdfaf6,var(--cream));
 border-bottom:1px solid rgba(184,151,90,.35);
 flex-shrink:0;
 }
 
-.gallery-title {
-font-family:'Cormorant Garamond',serif;
-font-style:italic;
-font-size:1.4rem;
-color:var(--sage-dark);
-letter-spacing:.04em;
-}
-
-.gallery-close {
+.gallery-close, .gallery-refresh {
 width:34px;
 height:34px;
 border-radius:50%;
@@ -834,7 +827,7 @@ padding:0;
 transition:background .2s ease,transform .2s ease;
 }
 
-.gallery-close:hover {
+.gallery-close:hover, .gallery-refresh:hover {
 background:var(--cream);
 transform:scale(1.06);
 }
@@ -1571,7 +1564,7 @@ transparent;
 
 <div class="gallery-overlay" id="galleryOverlay" aria-hidden="true">
   <div class="gallery-top">
-    <span class="gallery-title">I nostri ricordi</span>
+    <button class="gallery-refresh" id="galleryRefresh" aria-label="Aggiorna">⟳</button>
     <button class="gallery-close" id="galleryClose" aria-label="Chiudi">&times;</button>
   </div>
   <div class="gallery-body" id="galleryBody">
@@ -1665,6 +1658,7 @@ button.addEventListener('click', () => {
 const galleryBtn = document.getElementById('galleryBtn');
 const galleryOverlay = document.getElementById('galleryOverlay');
 const galleryClose = document.getElementById('galleryClose');
+const galleryRefresh = document.getElementById('galleryRefresh');
 const galleryGrid = document.getElementById('galleryGrid');
 const galleryStatus = document.getElementById('galleryStatus');
 const lightbox = document.getElementById('lightbox');
@@ -1744,6 +1738,7 @@ function openLightbox(index) {
   }
   lightbox.classList.add('open');
   lightbox.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('no-scroll');
 }
 
 function closeLightbox() {
@@ -1751,6 +1746,7 @@ function closeLightbox() {
   lightbox.setAttribute('aria-hidden', 'true');
   lightboxStage.innerHTML = '';
   currentIndex = -1;
+  if (!galleryOverlay.classList.contains('open')) document.body.classList.remove('no-scroll');
 }
 
 function showRelative(delta) {
@@ -1759,16 +1755,26 @@ function showRelative(delta) {
   openLightbox(next);
 }
 
-galleryBtn.addEventListener('click', () => {
+function openGallery() {
   if (!weddingToken) { setHint('QR non valido.', false); return; }
   galleryOverlay.classList.add('open');
   galleryOverlay.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('no-scroll');
   loadGallery();
-});
+}
 
-galleryClose.addEventListener('click', () => {
+function closeGallery() {
   galleryOverlay.classList.remove('open');
   galleryOverlay.setAttribute('aria-hidden', 'true');
+  if (!lightbox.classList.contains('open')) document.body.classList.remove('no-scroll');
+}
+
+galleryBtn.addEventListener('click', openGallery);
+
+galleryClose.addEventListener('click', closeGallery);
+
+galleryRefresh.addEventListener('click', () => {
+  loadGallery();
 });
 
 lightboxClose.addEventListener('click', closeLightbox);
@@ -1776,11 +1782,15 @@ lightboxPrev.addEventListener('click', () => showRelative(-1));
 lightboxNext.addEventListener('click', () => showRelative(1));
 lightbox.addEventListener('click', (e) => { if (e.target === lightbox) closeLightbox(); });
 
-// Scorrimento con il dito (swipe) per passare da una foto all'altra
+// Scorrimento con il dito (swipe) per passare da una foto all'altra,
+// impedendo che il gesto faccia scorrere anche la pagina sotto
 let touchStartX = 0;
 lightboxStage.addEventListener('touchstart', (e) => {
   touchStartX = e.changedTouches[0].clientX;
 }, { passive: true });
+lightboxStage.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+}, { passive: false });
 lightboxStage.addEventListener('touchend', (e) => {
   const delta = e.changedTouches[0].clientX - touchStartX;
   if (Math.abs(delta) > 40) showRelative(delta > 0 ? -1 : 1);

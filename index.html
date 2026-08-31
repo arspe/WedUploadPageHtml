@@ -844,6 +844,109 @@ border-color:var(--sage);
 background:var(--sage-light);
 }
 
+.gallery-select-toggle {
+width:34px;
+height:34px;
+border-radius:50%;
+border:1.3px solid #c0392b;
+background:#fdecea;
+color:#c0392b;
+font-size:1rem;
+cursor:pointer;
+display:flex;
+align-items:center;
+justify-content:center;
+padding:0;
+transition:background .2s ease,transform .2s ease;
+}
+
+.gallery-select-toggle:hover {
+background:#f8d7d3;
+transform:scale(1.06);
+}
+
+.gallery-select-toggle.active {
+background:#c0392b;
+color:#fff;
+}
+
+.gallery-select-bar {
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:10px;
+padding:12px 16px;
+background:#fdfaf6;
+border-top:1px solid rgba(184,151,90,.35);
+flex-shrink:0;
+}
+
+.gallery-select-bar span {
+font-family:'Jost',sans-serif;
+font-size:.85rem;
+color:var(--sage-dark);
+}
+
+.gallery-select-bar button {
+border:none;
+border-radius:20px;
+padding:9px 18px;
+font-family:'Jost',sans-serif;
+font-size:.85rem;
+cursor:pointer;
+}
+
+#gallerySelectCancel {
+background:none;
+color:var(--sage-dark);
+}
+
+#gallerySelectDelete {
+background:#c0392b;
+color:#fff;
+}
+
+#gallerySelectDelete:disabled {
+opacity:.4;
+cursor:default;
+}
+
+.gallery-item.selectable {
+cursor:pointer;
+}
+
+.gallery-item-select-dot {
+position:absolute;
+top:6px;
+right:6px;
+width:24px;
+height:24px;
+border-radius:50%;
+border:2px solid #fff;
+background:rgba(0,0,0,.35);
+z-index:2;
+}
+
+.gallery-item.selected .gallery-item-select-dot {
+background:#c0392b;
+border-color:#c0392b;
+}
+
+.gallery-item.selected .gallery-item-select-dot::after {
+content:"✓";
+color:#fff;
+font-size:.75rem;
+display:flex;
+align-items:center;
+justify-content:center;
+width:100%;
+height:100%;
+}
+
+.gallery-item.dimmed {
+opacity:.35;
+}
+
 .gallery-item-open {
 position:absolute;
 inset:0;
@@ -853,24 +956,6 @@ border:none;
 padding:0;
 background:none;
 cursor:pointer;
-}
-
-.gallery-item-trash {
-position:absolute;
-top:6px;
-right:6px;
-width:26px;
-height:26px;
-border-radius:50%;
-border:none;
-background:rgba(0,0,0,.55);
-color:#fff;
-font-size:.8rem;
-display:flex;
-align-items:center;
-justify-content:center;
-cursor:pointer;
-z-index:2;
 }
 
 .gallery-body {
@@ -1607,12 +1692,18 @@ transparent;
 <div class="gallery-overlay" id="galleryOverlay" aria-hidden="true">
   <div class="gallery-top">
     <button class="gallery-admin" id="galleryAdmin" aria-label="Modalità sposi">🔑</button>
+    <button class="gallery-select-toggle" id="gallerySelectToggle" aria-label="Seleziona foto da cancellare">🗑</button>
     <button class="gallery-refresh" id="galleryRefresh" aria-label="Aggiorna">⟳</button>
     <button class="gallery-close" id="galleryClose" aria-label="Chiudi">&times;</button>
   </div>
   <div class="gallery-body" id="galleryBody">
     <p class="gallery-status" id="galleryStatus">Caricamento…</p>
     <div class="gallery-grid" id="galleryGrid"></div>
+  </div>
+  <div class="gallery-select-bar" id="gallerySelectBar" hidden>
+    <button type="button" id="gallerySelectCancel">Annulla</button>
+    <span id="gallerySelectCount">0 selezionate</span>
+    <button type="button" id="gallerySelectDelete">Cancella</button>
   </div>
 </div>
 
@@ -1725,6 +1816,8 @@ const lightboxPrev = document.getElementById('lightboxPrev');
 const lightboxNext = document.getElementById('lightboxNext');
 
 let galleryFiles = [];
+let selectMode = false;
+let selectedIds = new Set();
 let currentIndex = -1;
 
 // Se il codice sposi arriva nel link, lo salviamo per sempre su questo
@@ -1758,6 +1851,9 @@ async function loadGallery() {
 
 function renderGallery() {
   galleryGrid.innerHTML = '';
+
+  const canDelete = (file) => isAdminMode || file.uploaderId === uploaderId;
+
   if (!galleryFiles.length) {
     galleryStatus.textContent = 'Non ci sono ancora ricordi condivisi. Sii il primo!';
     galleryStatus.style.display = 'block';
@@ -1765,8 +1861,13 @@ function renderGallery() {
   }
   galleryStatus.style.display = 'none';
   galleryFiles.forEach((file, i) => {
+    const deletable = canDelete(file);
     const item = document.createElement('div');
     item.className = 'gallery-item';
+    if (selectMode && deletable) item.classList.add('selectable');
+    if (selectMode && !deletable) item.classList.add('dimmed');
+    if (selectedIds.has(file.id)) item.classList.add('selected');
+
     const openBtn = document.createElement('button');
     openBtn.type = 'button';
     openBtn.className = 'gallery-item-open';
@@ -1782,42 +1883,84 @@ function renderGallery() {
       badge.innerHTML = '▶';
       openBtn.appendChild(badge);
     }
-    openBtn.addEventListener('click', () => openLightbox(i));
+    openBtn.addEventListener('click', () => {
+      if (selectMode) {
+        if (!deletable) return;
+        toggleSelected(file.id);
+        return;
+      }
+      openLightbox(i);
+    });
     item.appendChild(openBtn);
 
-    if (isAdminMode || file.uploaderId === uploaderId) {
-      const trash = document.createElement('button');
-      trash.type = 'button';
-      trash.className = 'gallery-item-trash';
-      trash.setAttribute('aria-label', 'Elimina');
-      trash.innerHTML = '🗑';
-      trash.addEventListener('click', (e) => {
-        e.stopPropagation();
-        deletePhoto(file.id, item);
-      });
-      item.appendChild(trash);
+    if (selectMode && deletable) {
+      const dot = document.createElement('span');
+      dot.className = 'gallery-item-select-dot';
+      item.appendChild(dot);
     }
 
     galleryGrid.appendChild(item);
   });
 }
 
-async function deletePhoto(id, itemEl) {
-  if (!confirm('Cancellare definitivamente questo ricordo? Non si può annullare.')) return;
-  try {
-    const headers = { 'X-Wedding-Token': weddingToken, 'X-Uploader-Id': uploaderId };
-    if (isAdminMode && adminSecret) headers['X-Admin-Secret'] = adminSecret;
-    const response = await fetch(`${BACKEND_URL}/api/photos/${id}?token=${encodeURIComponent(weddingToken)}`, {
-      method: 'DELETE',
-      headers,
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || 'Cancellazione non riuscita.');
-    galleryFiles = galleryFiles.filter((f) => f.id !== id);
-    itemEl.remove();
-  } catch (err) {
-    alert(err.message || 'Cancellazione non riuscita.');
+function toggleSelected(id) {
+  if (selectedIds.has(id)) selectedIds.delete(id);
+  else selectedIds.add(id);
+  updateSelectBar();
+  renderGallery();
+}
+
+function updateSelectBar() {
+  gallerySelectCount.textContent = `${selectedIds.size} ${selectedIds.size === 1 ? 'selezionata' : 'selezionate'}`;
+  gallerySelectDelete.disabled = selectedIds.size === 0;
+}
+
+function enterSelectMode() {
+  selectMode = true;
+  selectedIds.clear();
+  gallerySelectToggle.classList.add('active');
+  gallerySelectBar.hidden = false;
+  updateSelectBar();
+  renderGallery();
+}
+
+function exitSelectMode() {
+  selectMode = false;
+  selectedIds.clear();
+  gallerySelectToggle.classList.remove('active');
+  gallerySelectBar.hidden = true;
+  renderGallery();
+}
+
+async function deleteSelected() {
+  if (!selectedIds.size) return;
+  const n = selectedIds.size;
+  if (!confirm(`Cancellare definitivamente ${n} ${n === 1 ? 'ricordo' : 'ricordi'}? Non si può annullare.`)) return;
+
+  gallerySelectDelete.disabled = true;
+  gallerySelectDelete.textContent = 'Cancellazione…';
+
+  const headers = { 'X-Wedding-Token': weddingToken, 'X-Uploader-Id': uploaderId };
+  if (isAdminMode && adminSecret) headers['X-Admin-Secret'] = adminSecret;
+
+  const ids = [...selectedIds];
+  let failed = 0;
+  for (const id of ids) {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/photos/${id}?token=${encodeURIComponent(weddingToken)}`, {
+        method: 'DELETE',
+        headers,
+      });
+      if (!response.ok) throw new Error();
+      galleryFiles = galleryFiles.filter((f) => f.id !== id);
+    } catch {
+      failed++;
+    }
   }
+
+  gallerySelectDelete.textContent = 'Cancella';
+  if (failed) alert(`${failed} elemento${failed === 1 ? '' : 'i'} non ${failed === 1 ? 'è stato' : 'sono stati'} cancellato${failed === 1 ? '' : 'i'}.`);
+  exitSelectMode();
 }
 
 function openLightbox(index) {
@@ -1868,6 +2011,7 @@ function closeGallery() {
   galleryOverlay.classList.remove('open');
   galleryOverlay.setAttribute('aria-hidden', 'true');
   if (!lightbox.classList.contains('open')) document.body.classList.remove('no-scroll');
+  if (selectMode) exitSelectMode();
 }
 
 galleryBtn.addEventListener('click', openGallery);
@@ -1877,6 +2021,20 @@ galleryClose.addEventListener('click', closeGallery);
 galleryRefresh.addEventListener('click', () => {
   loadGallery();
 });
+
+const gallerySelectToggle = document.getElementById('gallerySelectToggle');
+const gallerySelectBar = document.getElementById('gallerySelectBar');
+const gallerySelectCount = document.getElementById('gallerySelectCount');
+const gallerySelectDelete = document.getElementById('gallerySelectDelete');
+const gallerySelectCancel = document.getElementById('gallerySelectCancel');
+
+gallerySelectToggle.addEventListener('click', () => {
+  if (selectMode) exitSelectMode();
+  else enterSelectMode();
+});
+
+gallerySelectCancel.addEventListener('click', exitSelectMode);
+gallerySelectDelete.addEventListener('click', deleteSelected);
 
 const galleryAdmin = document.getElementById('galleryAdmin');
 if (isAdminMode) galleryAdmin.classList.add('active');

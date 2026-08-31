@@ -301,7 +301,7 @@ app.get('/api/photos/:id/media', async (req, res) => {
 
 // Cancellazione DEFINITIVA di un file (non nel cestino: sparisce subito e
 // per sempre). Permessa solo a chi lo ha caricato (stesso uploaderId) o
-// agli sposi (ADMIN_SECRET).
+// agli sposi (GALLERY_ADMIN_CODE).
 app.delete('/api/photos/:id', async (req, res) => {
   try {
     if (!currentRefreshToken) return res.status(503).json({ error: 'Non collegato a Drive.' });

@@ -848,26 +848,25 @@ background:var(--sage-light);
 width:34px;
 height:34px;
 border-radius:50%;
-border:1.3px solid #c0392b;
-background:#fdecea;
-color:#c0392b;
-font-size:1rem;
+border:none;
+background:linear-gradient(160deg,#e74c3c,#a5281c);
+color:#fff;
 cursor:pointer;
 display:flex;
 align-items:center;
 justify-content:center;
 padding:0;
-transition:background .2s ease,transform .2s ease;
+box-shadow:0 2px 6px rgba(192,57,43,.4);
+transition:transform .15s ease;
 }
 
 .gallery-select-toggle:hover {
-background:#f8d7d3;
-transform:scale(1.06);
+transform:scale(1.08);
 }
 
 .gallery-select-toggle.active {
-background:#c0392b;
-color:#fff;
+background:linear-gradient(160deg,#a5281c,#7a1e14);
+box-shadow:0 0 0 3px rgba(192,57,43,.25);
 }
 
 .gallery-select-bar {
@@ -1692,7 +1691,15 @@ transparent;
 <div class="gallery-overlay" id="galleryOverlay" aria-hidden="true">
   <div class="gallery-top">
     <button class="gallery-admin" id="galleryAdmin" aria-label="Modalità sposi">🔑</button>
-    <button class="gallery-select-toggle" id="gallerySelectToggle" aria-label="Seleziona foto da cancellare">🗑</button>
+    <button class="gallery-select-toggle" id="gallerySelectToggle" aria-label="Seleziona foto da cancellare">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+        <path d="M3 6h18"/>
+        <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+        <line x1="10" y1="11" x2="10" y2="17"/>
+        <line x1="14" y1="11" x2="14" y2="17"/>
+      </svg>
+    </button>
     <button class="gallery-refresh" id="galleryRefresh" aria-label="Aggiorna">⟳</button>
     <button class="gallery-close" id="galleryClose" aria-label="Chiudi">&times;</button>
   </div>

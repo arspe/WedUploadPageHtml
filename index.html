@@ -1726,8 +1726,15 @@ const lightboxNext = document.getElementById('lightboxNext');
 
 let galleryFiles = [];
 let currentIndex = -1;
-let isAdminMode = !!adminFromUrl;
-let adminSecret = adminFromUrl;
+
+// Se il codice sposi arriva nel link, lo salviamo per sempre su questo
+// telefono (come già succede per il codice degli invitati): non servirà
+// più riaprire il link speciale né scrivere la password.
+if (adminFromUrl) {
+  localStorage.setItem('weddingAdminCode', adminFromUrl);
+}
+let adminSecret = localStorage.getItem('weddingAdminCode') || '';
+let isAdminMode = !!adminSecret;
 
 function mediaUrl(id) {
   return `${BACKEND_URL}/api/photos/${id}/media?token=${encodeURIComponent(weddingToken)}`;
@@ -1877,6 +1884,7 @@ galleryAdmin.addEventListener('click', () => {
   if (isAdminMode) {
     isAdminMode = false;
     adminSecret = '';
+    localStorage.removeItem('weddingAdminCode');
     galleryAdmin.classList.remove('active');
     renderGallery();
     return;
@@ -1885,6 +1893,7 @@ galleryAdmin.addEventListener('click', () => {
   if (!secret) return;
   adminSecret = secret;
   isAdminMode = true;
+  localStorage.setItem('weddingAdminCode', secret);
   galleryAdmin.classList.add('active');
   renderGallery();
 });

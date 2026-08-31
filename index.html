@@ -880,6 +880,10 @@ border-top:1px solid rgba(184,151,90,.35);
 flex-shrink:0;
 }
 
+.gallery-select-bar[hidden] {
+display:none;
+}
+
 .gallery-select-bar span {
 font-family:'Jost',sans-serif;
 font-size:.85rem;
@@ -1183,12 +1187,41 @@ opacity:.9;
 /* input nascosto */
 
 
-#fileInput {
+.capture-choices {
+display:flex;
+gap:10px;
+justify-content:center;
+margin:0 0 16px;
+}
 
+.capture-btn {
+display:flex;
+flex-direction:column;
+align-items:center;
+gap:6px;
+flex:1;
+max-width:110px;
+padding:14px 8px;
+border:1.5px solid var(--sage-light);
+border-radius:16px;
+background:#fff;
+color:var(--sage-dark);
+font-family:'Jost',sans-serif;
+font-size:.85rem;
+font-weight:400;
+cursor:pointer;
+transition:transform .15s ease,border-color .15s ease,background .15s ease;
+}
 
-display:none;
+.capture-btn svg {
+width:24px;
+height:24px;
+}
 
-
+.capture-btn:active {
+transform:scale(.95);
+background:var(--cream);
+border-color:var(--sage);
 }
 
 
@@ -1388,12 +1421,26 @@ Matrimonio di
 <p class="cta-text">Ogni momento è più bello se condiviso</p>
 
 
-<input
-type="file"
-id="fileInput"
-accept="image/*,video/*"
-multiple
-/>
+<input type="file" id="inputFoto" accept="image/*" capture="environment" hidden />
+<input type="file" id="inputVideo" accept="video/*" capture="environment" hidden />
+<input type="file" id="inputGallery" accept="image/*,video/*" multiple hidden />
+
+<div class="capture-choices">
+  <button type="button" class="capture-btn" id="btnFoto">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+    <span>Foto</span>
+  </button>
+  <button type="button" class="capture-btn" id="btnVideo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+    <span>Video</span>
+  </button>
+  <button type="button" class="capture-btn" id="btnGallery">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+    <span>Galleria</span>
+  </button>
+</div>
+
+
 
 
 
@@ -1725,7 +1772,9 @@ transparent;
 // Indirizzo del backend su Render (aggiornalo con il tuo dopo il deploy)
 const BACKEND_URL = 'https://mywedupload.onrender.com';
 
-const input = document.getElementById('fileInput');
+const inputFoto = document.getElementById('inputFoto');
+const inputVideo = document.getElementById('inputVideo');
+const inputGallery = document.getElementById('inputGallery');
 const hint = document.getElementById('hint');
 const button = document.querySelector('.btn-upload');
 const btnLabel = document.getElementById('btnLabel');
@@ -1745,21 +1794,28 @@ function getUploaderId() {
 }
 const uploaderId = getUploaderId();
 
+let selectedFiles = [];
+
 function setHint(text, ok = true) {
   hint.textContent = text;
   hint.style.opacity = '1';
   hint.style.color = ok ? '#4e6e4a' : '#8a3d3d';
 }
 
-async function uploadSelectedFiles() {
-  if (!input.files?.length) return;
-  if (!weddingToken) { setHint('QR non valido.', false); return; }
+function updateSelectionHint() {
+  const totalMB = selectedFiles.reduce((n, f) => n + f.size, 0) / 1024 / 1024;
+  setHint(`${selectedFiles.length} ${selectedFiles.length === 1 ? 'elemento selezionato' : 'elementi selezionati'} · ${totalMB.toFixed(1)} MB — tocca "Condividi" per caricare`);
+  btnLabel.textContent = selectedFiles.length === 1 ? 'Condividi' : `Condividi (${selectedFiles.length})`;
+  button.classList.add('btn-upload-ready');
+}
 
-  const files = [...input.files];
+async function uploadSelectedFiles() {
+  if (!selectedFiles.length) return;
+  if (!weddingToken) { setHint('QR non valido.', false); return; }
 
   const form = new FormData();
   form.append('uploaderId', uploaderId);
-  for (const file of files) form.append('files', file, file.name);
+  for (const file of selectedFiles) form.append('files', file, file.name);
 
   button.classList.remove('btn-upload-ready');
   button.disabled = true;
@@ -1774,7 +1830,7 @@ async function uploadSelectedFiles() {
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || 'Caricamento non riuscito.');
-    input.value = '';
+    selectedFiles = [];
     setHint(`✓ Grazie! ${data.count === 1 ? 'Il tuo ricordo è stato aggiunto' : 'I tuoi ricordi sono stati aggiunti'} 💚`);
   } catch (err) {
     setHint(err.message || 'Caricamento non riuscito.', false);
@@ -1785,24 +1841,21 @@ async function uploadSelectedFiles() {
   }
 }
 
-// Dopo la scelta, il pulsante diventa giallo: segnala che va ripremuto per
-// caricare davvero.
-input.addEventListener('change', () => {
-  const files = [...(input.files || [])];
-  if (!files.length) return;
-  const totalMB = files.reduce((n, f) => n + f.size, 0) / 1024 / 1024;
-  setHint(`${files.length} ${files.length === 1 ? 'elemento selezionato' : 'elementi selezionati'} · ${totalMB.toFixed(1)} MB — tocca di nuovo per caricare`);
-  btnLabel.textContent = files.length === 1 ? 'Condividi' : `Condividi (${files.length})`;
-  button.classList.add('btn-upload-ready');
-});
+document.getElementById('btnFoto').addEventListener('click', () => inputFoto.click());
+document.getElementById('btnVideo').addEventListener('click', () => inputVideo.click());
+document.getElementById('btnGallery').addEventListener('click', () => inputGallery.click());
+
+for (const src of [inputFoto, inputVideo, inputGallery]) {
+  src.addEventListener('change', () => {
+    const files = [...(src.files || [])];
+    if (!files.length) return;
+    selectedFiles = selectedFiles.concat(files);
+    updateSelectionHint();
+    src.value = '';
+  });
+}
 
 button.addEventListener('click', () => {
-  // Se non hai ancora scelto nessuna foto/video, il pulsante apre la selezione file
-  if (!input.files?.length) {
-    input.click();
-    return;
-  }
-  // Altrimenti conferma il caricamento di quanto già scelto
   uploadSelectedFiles();
 });
 

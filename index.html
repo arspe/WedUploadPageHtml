@@ -810,7 +810,7 @@ border-bottom:1px solid rgba(184,151,90,.35);
 flex-shrink:0;
 }
 
-.gallery-close, .gallery-refresh {
+.gallery-close, .gallery-refresh, .gallery-admin {
 width:34px;
 height:34px;
 border-radius:50%;
@@ -827,9 +827,50 @@ padding:0;
 transition:background .2s ease,transform .2s ease;
 }
 
-.gallery-close:hover, .gallery-refresh:hover {
+.gallery-close:hover, .gallery-refresh:hover, .gallery-admin:hover {
 background:var(--cream);
 transform:scale(1.06);
+}
+
+.gallery-admin {
+margin-right:auto;
+opacity:.55;
+font-size:.85rem;
+}
+
+.gallery-admin.active {
+opacity:1;
+border-color:var(--sage);
+background:var(--sage-light);
+}
+
+.gallery-item-open {
+position:absolute;
+inset:0;
+width:100%;
+height:100%;
+border:none;
+padding:0;
+background:none;
+cursor:pointer;
+}
+
+.gallery-item-trash {
+position:absolute;
+top:6px;
+right:6px;
+width:26px;
+height:26px;
+border-radius:50%;
+border:none;
+background:rgba(0,0,0,.55);
+color:#fff;
+font-size:.8rem;
+display:flex;
+align-items:center;
+justify-content:center;
+cursor:pointer;
+z-index:2;
 }
 
 .gallery-body {
@@ -1565,6 +1606,7 @@ transparent;
 
 <div class="gallery-overlay" id="galleryOverlay" aria-hidden="true">
   <div class="gallery-top">
+    <button class="gallery-admin" id="galleryAdmin" aria-label="Modalità sposi">🔑</button>
     <button class="gallery-refresh" id="galleryRefresh" aria-label="Aggiorna">⟳</button>
     <button class="gallery-close" id="galleryClose" aria-label="Chiudi">&times;</button>
   </div>
@@ -1591,6 +1633,19 @@ const button = document.querySelector('.btn-upload');
 const btnLabel = document.getElementById('btnLabel');
 const params = new URLSearchParams(location.search);
 const weddingToken = params.get('t') || '';
+const adminFromUrl = params.get('admin') || '';
+
+// Codice personale invisibile: identifica questo telefono/browser, così le
+// sue foto si possono riconoscere e cancellare solo da qui.
+function getUploaderId() {
+  let id = localStorage.getItem('weddingUploaderId');
+  if (!id) {
+    id = 'u_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+    localStorage.setItem('weddingUploaderId', id);
+  }
+  return id;
+}
+const uploaderId = getUploaderId();
 
 function setHint(text, ok = true) {
   hint.textContent = text;
@@ -1605,6 +1660,7 @@ async function uploadSelectedFiles() {
   const files = [...input.files];
 
   const form = new FormData();
+  form.append('uploaderId', uploaderId);
   for (const file of files) form.append('files', file, file.name);
 
   button.classList.remove('btn-upload-ready');
@@ -1670,6 +1726,8 @@ const lightboxNext = document.getElementById('lightboxNext');
 
 let galleryFiles = [];
 let currentIndex = -1;
+let isAdminMode = !!adminFromUrl;
+let adminSecret = adminFromUrl;
 
 function mediaUrl(id) {
   return `${BACKEND_URL}/api/photos/${id}/media?token=${encodeURIComponent(weddingToken)}`;
@@ -1700,24 +1758,59 @@ function renderGallery() {
   }
   galleryStatus.style.display = 'none';
   galleryFiles.forEach((file, i) => {
-    const item = document.createElement('button');
+    const item = document.createElement('div');
     item.className = 'gallery-item';
-    item.type = 'button';
-    item.setAttribute('aria-label', file.isVideo ? 'Apri video' : 'Apri foto');
+    const openBtn = document.createElement('button');
+    openBtn.type = 'button';
+    openBtn.className = 'gallery-item-open';
+    openBtn.setAttribute('aria-label', file.isVideo ? 'Apri video' : 'Apri foto');
     const img = document.createElement('img');
     img.loading = 'lazy';
     if (file.thumb) img.src = file.thumb;
     img.alt = '';
-    item.appendChild(img);
+    openBtn.appendChild(img);
     if (file.isVideo) {
       const badge = document.createElement('span');
       badge.className = 'gallery-video-badge';
       badge.innerHTML = '▶';
-      item.appendChild(badge);
+      openBtn.appendChild(badge);
     }
-    item.addEventListener('click', () => openLightbox(i));
+    openBtn.addEventListener('click', () => openLightbox(i));
+    item.appendChild(openBtn);
+
+    if (isAdminMode || file.uploaderId === uploaderId) {
+      const trash = document.createElement('button');
+      trash.type = 'button';
+      trash.className = 'gallery-item-trash';
+      trash.setAttribute('aria-label', 'Elimina');
+      trash.innerHTML = '🗑';
+      trash.addEventListener('click', (e) => {
+        e.stopPropagation();
+        deletePhoto(file.id, item);
+      });
+      item.appendChild(trash);
+    }
+
     galleryGrid.appendChild(item);
   });
+}
+
+async function deletePhoto(id, itemEl) {
+  if (!confirm('Cancellare definitivamente questo ricordo? Non si può annullare.')) return;
+  try {
+    const headers = { 'X-Wedding-Token': weddingToken, 'X-Uploader-Id': uploaderId };
+    if (isAdminMode && adminSecret) headers['X-Admin-Secret'] = adminSecret;
+    const response = await fetch(`${BACKEND_URL}/api/photos/${id}?token=${encodeURIComponent(weddingToken)}`, {
+      method: 'DELETE',
+      headers,
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || 'Cancellazione non riuscita.');
+    galleryFiles = galleryFiles.filter((f) => f.id !== id);
+    itemEl.remove();
+  } catch (err) {
+    alert(err.message || 'Cancellazione non riuscita.');
+  }
 }
 
 function openLightbox(index) {
@@ -1776,6 +1869,24 @@ galleryClose.addEventListener('click', closeGallery);
 
 galleryRefresh.addEventListener('click', () => {
   loadGallery();
+});
+
+const galleryAdmin = document.getElementById('galleryAdmin');
+if (isAdminMode) galleryAdmin.classList.add('active');
+galleryAdmin.addEventListener('click', () => {
+  if (isAdminMode) {
+    isAdminMode = false;
+    adminSecret = '';
+    galleryAdmin.classList.remove('active');
+    renderGallery();
+    return;
+  }
+  const secret = prompt('Password sposi:');
+  if (!secret) return;
+  adminSecret = secret;
+  isAdminMode = true;
+  galleryAdmin.classList.add('active');
+  renderGallery();
 });
 
 lightboxClose.addEventListener('click', closeLightbox);

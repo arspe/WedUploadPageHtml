@@ -2011,7 +2011,11 @@ function openLightbox(index) {
     lightboxStage.appendChild(video);
   } else {
     const img = document.createElement('img');
-    img.src = mediaUrl(file.id);
+    // Versione grande caricata direttamente da Google (molto più veloce
+    // del passaggio dal nostro server), con la foto intera come riserva
+    // se per qualche motivo questa non fosse disponibile.
+    img.src = file.thumb ? file.thumb.replace(/=s\d+$/, '=s1600') : mediaUrl(file.id);
+    img.onerror = () => { img.onerror = null; img.src = mediaUrl(file.id); };
     img.alt = '';
     lightboxStage.appendChild(img);
   }

@@ -1752,6 +1752,23 @@ function getUploaderId() {
 }
 const uploaderId = getUploaderId();
 
+// Elenco (salvato per sempre su questo telefono) degli ID delle foto
+// caricate da qui: serve come rete di sicurezza nel caso l'etichetta su
+// Google Drive impieghi qualche istante ad essere disponibile subito dopo
+// il caricamento.
+function getMyUploadIds() {
+  try {
+    return new Set(JSON.parse(localStorage.getItem('weddingMyUploadIds') || '[]'));
+  } catch {
+    return new Set();
+  }
+}
+function addMyUploadIds(ids) {
+  const set = getMyUploadIds();
+  ids.forEach((id) => set.add(id));
+  localStorage.setItem('weddingMyUploadIds', JSON.stringify([...set]));
+}
+
 function setHint(text, ok = true) {
   hint.textContent = text;
   hint.style.opacity = '1';
@@ -1781,6 +1798,9 @@ async function uploadSelectedFiles() {
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || 'Caricamento non riuscito.');
+    if (Array.isArray(data.files)) {
+      addMyUploadIds(data.files.map((f) => f.id).filter(Boolean));
+    }
     input.value = '';
     setHint(`✓ Grazie! ${data.count === 1 ? 'Il tuo ricordo è stato aggiunto' : 'I tuoi ricordi sono stati aggiunti'} 💚`);
   } catch (err) {
@@ -1866,7 +1886,8 @@ async function loadGallery() {
 function renderGallery() {
   galleryGrid.innerHTML = '';
 
-  const canDelete = (file) => isAdminMode || file.uploaderId === uploaderId;
+  const myUploadIds = getMyUploadIds();
+  const canDelete = (file) => isAdminMode || file.uploaderId === uploaderId || myUploadIds.has(file.id);
 
   if (!galleryFiles.length) {
     galleryStatus.textContent = 'Non ci sono ancora ricordi condivisi. Sii il primo!';

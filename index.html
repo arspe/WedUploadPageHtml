@@ -1994,7 +1994,7 @@ async function deleteSelected() {
   }
 
   gallerySelectDelete.textContent = 'Cancella';
-  if (failed) alert(`${failed} ${failed === 1 ? 'elemento' : 'elementi'} non ${failed === 1 ? 'è stato cancellato' : 'sono stati cancellati'}.`);
+  if (failed) alert(`Errore: ${failed === 1 ? 'la foto non è stata cancellata' : `${failed} foto non sono state cancellate`}.`);
   exitSelectMode();
 }
 
@@ -2077,7 +2077,7 @@ gallerySelectDelete.addEventListener('click', deleteSelected);
 
 const galleryAdmin = document.getElementById('galleryAdmin');
 if (isAdminMode) galleryAdmin.classList.add('active');
-galleryAdmin.addEventListener('click', () => {
+galleryAdmin.addEventListener('click', async () => {
   if (isAdminMode) {
     isAdminMode = false;
     adminSecret = '';
@@ -2088,6 +2088,21 @@ galleryAdmin.addEventListener('click', () => {
   }
   const secret = prompt('Password sposi:');
   if (!secret) return;
+
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/admin/verify?token=${encodeURIComponent(weddingToken)}`, {
+      headers: { 'X-Admin-Secret': secret },
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!data.valid) {
+      alert('Password errata.');
+      return;
+    }
+  } catch {
+    alert('Impossibile verificare la password ora, riprova.');
+    return;
+  }
+
   adminSecret = secret;
   isAdminMode = true;
   localStorage.setItem('weddingAdminCode', secret);

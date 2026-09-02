@@ -1970,7 +1970,7 @@ function exitSelectMode() {
 async function deleteSelected() {
   if (!selectedIds.size) return;
   const n = selectedIds.size;
-  if (!confirm(`Cancellare definitivamente ${n} ${n === 1 ? 'ricordo' : 'ricordi'}? Non si può annullare.`)) return;
+  if (!confirm(`Sei sicuro di voler cancellare ${n} ${n === 1 ? 'ricordo' : 'ricordi'}?`)) return;
 
   gallerySelectDelete.disabled = true;
   gallerySelectDelete.textContent = 'Cancellazione…';
@@ -1994,7 +1994,7 @@ async function deleteSelected() {
   }
 
   gallerySelectDelete.textContent = 'Cancella';
-  if (failed) alert(`${failed} elemento${failed === 1 ? '' : 'i'} non ${failed === 1 ? 'è stato' : 'sono stati'} cancellato${failed === 1 ? '' : 'i'}.`);
+  if (failed) alert(`${failed} ${failed === 1 ? 'elemento' : 'elementi'} non ${failed === 1 ? 'è stato cancellato' : 'sono stati cancellati'}.`);
   exitSelectMode();
 }
 
